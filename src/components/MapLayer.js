@@ -1,44 +1,68 @@
+import React, { useEffect, useState } from "react";
+import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 import "./MapLayer.css";
-
-import { MapContainer, GeoJSON, TileLayer } from "react-leaflet";
-import statesData from "./USAStates.js";
+import statesData from "./USAStates.json";
+import countiesData from "./USACounties.json";
 
 const MapLayer = () => {
+  const [selectedLayer, setSelectedLayer] = useState("counties");
+  const [key, setKey] = useState(0);
 
-  const color = ["red", "green", "blue", "orange"]
-  const stateStyle = {
-    fillColor: "red",
-    fillOpacity: 1,
-    color: "black",
-    weight: 2,
+  useEffect(() => {
+    // Clean-up function
+    return () => {
+      // Perform any necessary clean-up here
+    };
+  }, [selectedLayer]);
+
+  const handleLayerChange = (event) => {
+    setSelectedLayer(event.target.value);
+    setKey((prevKey) => prevKey + 1); // Update the key to force re-render of GeoJSON component
   };
 
-  const featureHandler = (state, layer) => {
-    const stateName = state.properties.name;
-    
-    layer.bindPopup(stateName + "\n Some Analytics");
+  const getColorStyle = () => {
+    const colors = ["red", "green", "blue", "orange"];
+    return colors[Math.floor(Math.random() * colors.length)];
+  };
 
-    layer.options.fillColor = color[Math.ceil(Math.random() * 4)]
-
-    layer.on({
-      click: (event) =>{
-        
-      }
-    })
+  const getFeatureStyle = () => {
+    return {
+      fillColor: getColorStyle(),
+      fillOpacity: 1,
+      color: "black",
+      weight: 2,
+    };
   };
 
   return (
-    <MapContainer center={[37.8, -96]} zoom={4} scrollWheelZoom={true}>
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <GeoJSON
-        style={{ stateStyle }}
-        data={statesData.features}
-        onEachFeature={featureHandler}
-      />
-    </MapContainer>
+    <div className="map-container">
+      <div className="sidebar-overlay">
+        <div className="sidebar">
+          <div className="dropdown">
+            <label htmlFor="layerSelect">Select Layer:</label>
+            <select id="layerSelect" value={selectedLayer} onChange={handleLayerChange}>
+              <option value="counties">US Counties</option>
+              <option value="states">US States</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div className="map-wrapper">
+        <MapContainer center={[37.8, -96]} zoom={4} className="map">
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="OpenStreetMap" />
+          <GeoJSON
+            key={key} // Update key to force re-render of GeoJSON component
+            style={getFeatureStyle}
+            data={selectedLayer === "counties" ? countiesData.features : statesData.features}
+            onEachFeature={(feature, layer) => {
+              const stateName = feature.properties.NAME;
+              layer.bindPopup(stateName + "\n Some Analytics");
+            }}
+          />
+        </MapContainer>
+      </div>
+    </div>
   );
 };
 
