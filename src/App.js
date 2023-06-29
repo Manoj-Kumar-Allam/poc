@@ -1,5 +1,4 @@
 import './App.css';
-
 import MapLayer from './components/MapLayer';
 
 function App() {
